@@ -1,0 +1,18 @@
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                          https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+
+    <entity name="App\Products\Domain\Entity\Product" table="products">
+        <id name="id" type="product_id">
+            <generator strategy="NONE" />
+        </id>
+
+        <field name="title" type="string" />
+        <field name="price" type="float" />
+        <field name="imageUrl" type="string" nullable="true" />
+        <field name="sourceUrl" type="string" />
+
+    </entity>
+
+</doctrine-mapping>

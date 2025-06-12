@@ -1,0 +1,19 @@
+includes:
+    - phpstan-baseline.neon
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-symfony/rules.neon
+
+parameters:
+    symfony:
+        containerXmlPath: var/cache/dev/App_Shared_Infrastructure_KernelDevDebugContainer.xml
+        consoleApplicationLoader: tests/console-application.php
+    doctrine:
+        objectManagerLoader: tests/object-manager.php
+    level: 8
+    paths:
+        - bin/
+        - config/
+        - public/
+        - src/
+        - tests/

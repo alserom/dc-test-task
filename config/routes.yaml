@@ -1,0 +1,12 @@
+kernel:
+    resource: App\Shared\Infrastructure\Kernel
+    type: attribute
+
+products_api:
+    resource:
+        path: ../src/Products/UI/Http/REST/Controller
+        namespace: App\Products\UI\Http\REST\Controller
+    type: attribute
+    prefix: '/api/products'
+    name_prefix: 'products_api_'
+    trailing_slash_on_root: false
