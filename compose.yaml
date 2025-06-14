@@ -42,8 +42,13 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     entrypoint: ""
     command: php bin/console messenger:consume event_broker async -vv  
+    deploy:
+      mode: replicated
+      replicas: 1
 
 # Mercure is installed as a Caddy module, prevent the Flex recipe from installing another service
 ###> symfony/mercure-bundle ###
@@ -79,6 +84,16 @@ services:
       retries: 5
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+        
+  redis:
+    image: redis:${REDIS_VERSION:-latest}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   caddy_data:
@@ -90,3 +105,4 @@ volumes:
   database_data:
 ###< doctrine/doctrine-bundle ###
   rabbitmq_data:
+  redis_data:
