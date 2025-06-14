@@ -4,6 +4,8 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    env(APP_PRODUCTS_CSV_FILEPATH): '%kernel.project_dir%/products.csv'
+    app.products.csv.file_path: '%env(string:APP_PRODUCTS_CSV_FILEPATH)%'
 
 services:
     # default configuration for services in *this* file
@@ -30,6 +32,16 @@ services:
         arguments:
             - '@App\Shared\Application\Command\CommandBusInterface'
             - '@App\Products\Infrastructure\Service\ProductImport\Rozetka\Parser'
+
+    app.products.csv.writer:
+        class: App\Shared\Infrastructure\Persistence\CSV\LeagueCsvWriter
+        arguments:
+            - '%app.products.csv.file_path%'
+            - 'a+'
+                
+    App\Products\Infrastructure\Persistence\CSV\Repository\ProductRepository:
+        arguments:
+            - '@app.products.csv.writer'
 
     _instanceof:
         App\Shared\Application\Command\CommandHandlerInterface:
