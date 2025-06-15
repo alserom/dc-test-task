@@ -28,6 +28,10 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
 ###> symfony/mercure-bundle ###
 ###< symfony/mercure-bundle ###
@@ -42,3 +46,7 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+        
+  redis:
+    ports:
+      - "6379:6379"

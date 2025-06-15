@@ -1,0 +1,11 @@
+enqueue:
+    default:
+        transport:
+            dsn: '%env(resolve:ENQUEUE_DSN)%'
+            global:
+                group.id: '%env(resolve:ENQUEUE_DEFAULT_GROUP_ID)%'
+                metadata.broker.list: '%env(resolve:ENQUEUE_DEFAULT_BROKER_LIST)%'
+            topic:
+                auto.offset.reset: beginning
+            commit_async: true
+        client: null

@@ -12,12 +12,11 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
  */
 class ProductRepositoryTest extends KernelTestCase
 {
-    private const string FILE_PATH = ProductRepository::DEFAULT_FILE_PATH . '__test.csv';
-
     public function tearDown(): void
     {
-        if (file_exists(self::FILE_PATH)) {
-            unlink(self::FILE_PATH);
+        $filePath = static::getContainer()->getParameter('app.products.csv.file_path');
+        if (file_exists($filePath)) {
+            unlink($filePath);
         }
         parent::tearDown();
     }
@@ -25,6 +24,7 @@ class ProductRepositoryTest extends KernelTestCase
     public function testAdd(): void
     {
         static::bootKernel();
+        $filePath = static::getContainer()->getParameter('app.products.csv.file_path');
         $factory = static::getContainer()->get(DomainProductFactory::class);
         /** @var ProductRepository $repository */
         $repository = static::getContainer()->get(ProductRepository::class);
@@ -37,8 +37,8 @@ class ProductRepositoryTest extends KernelTestCase
             'https://example.com/img.png',
         );
 
-        $repository->withFilePath(self::FILE_PATH)->add($product);
+        $repository->add($product);
 
-        static::assertFileExists($repository->getFilePath());
+        static::assertFileExists($filePath);
     }
 }

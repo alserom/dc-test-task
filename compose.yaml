@@ -42,8 +42,46 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka-init-topics:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
     entrypoint: ""
     command: php bin/console messenger:consume event_broker async -vv  
+    deploy:
+      mode: replicated
+      replicas: 1
+      
+  consumer-another:
+    build:
+      context: .
+      target: frankenphp_dev
+    image: ${IMAGES_PREFIX:-}app-consumer-another-php
+    restart: unless-stopped
+    volumes:
+      - ./:/app
+      - ./frankenphp/conf.d/20-app.dev.ini:/usr/local/etc/php/app.conf.d/20-app.dev.ini:ro
+    depends_on:
+      database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka-init-topics:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    entrypoint: ""
+    command: php bin/console messenger:consume event_broker -vv
+    environment:
+      ENQUEUE_DEFAULT_GROUP_ID: another-app
+      APP_PRODUCTS_CSV_FILEPATH: /app/products_another.csv
+    deploy:
+      mode: replicated
+      replicas: 1
 
 # Mercure is installed as a Caddy module, prevent the Flex recipe from installing another service
 ###> symfony/mercure-bundle ###
@@ -79,6 +117,63 @@ services:
       retries: 5
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+        
+  redis:
+    image: redis:${REDIS_VERSION:-latest}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+# guide https://www.saybackend.com/blog/05-kafka-in-docker-kraft/
+  kafka:
+    image: apache/kafka:latest
+    container_name: broker
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    ports:
+      - "9094:9094"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "./opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  kafka-init-topics:
+    image: apache/kafka:latest
+    command: [ '/opt/kafka/bin/kafka-topics.sh', '--create', '--if-not-exists', '--bootstrap-server', 'broker:9092', '--replication-factor', '1', '--partitions', '1', '--topic', 'events-topic' ]
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8088:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker:9092
+      KAFKA_CLUSTERS_0_READONLY: "false"
+    depends_on:
+      kafka:
+        condition: service_healthy
 
 volumes:
   caddy_data:
@@ -90,3 +185,4 @@ volumes:
   database_data:
 ###< doctrine/doctrine-bundle ###
   rabbitmq_data:
+  redis_data:

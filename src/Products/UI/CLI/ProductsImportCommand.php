@@ -6,12 +6,14 @@ use App\Products\Application\Command\CreateProduct\CreateProductCommand;
 use App\Products\Application\Exception\ProductImport\ProductImportExceptionInterface;
 use App\Products\Application\Service\ProductImport\ImporterInterface;
 use App\Shared\Application\Command\CommandBusInterface;
+use App\Shared\Infrastructure\Console\Command\LockableTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Lock\LockFactory;
 
 #[AsCommand(
     name: 'products:import',
@@ -19,6 +21,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 class ProductsImportCommand extends Command
 {
+    use LockableTrait;
+
     private const int LIMIT = 200;
 
     /**
@@ -28,9 +32,12 @@ class ProductsImportCommand extends Command
 
     public function __construct(
         private readonly CommandBusInterface $commandBus,
+        LockFactory $lockFactory,
         ImporterInterface $importer,
         ImporterInterface ...$importers
     ) {
+        $this->lockFactory = $lockFactory;
+
         array_unshift($importers, $importer);
         $this->importers = $importers;
 
@@ -61,6 +68,12 @@ class ProductsImportCommand extends Command
         $importer = $this->importers[0];
         if (count($this->importers) > 1) {
             $importer = $io->choice('Choose import source', $this->importers);
+        }
+
+        if (!$this->lock()) {
+            $io->note('The command is already running in another process.');
+
+            return Command::SUCCESS;
         }
 
         $bar = $io->createProgressBar();
@@ -94,6 +107,8 @@ class ProductsImportCommand extends Command
         $bar->finish();
 
         $io->success("Command completed");
+        $this->release();
+
         return Command::SUCCESS;
     }
 }

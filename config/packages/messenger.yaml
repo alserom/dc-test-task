@@ -18,14 +18,7 @@ framework:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
                 failure_transport: failed_command
             sync: 'sync://'
-            event_broker:
-                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
-                options:
-                    persistent: true
-                    exchange:
-                        name: event_bus
-                    queues:
-                        events: ~
+            event_broker: 'enqueue://default?topic[name]=events-topic&queue[name]=events-topic'
             failed_command:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
                 options:

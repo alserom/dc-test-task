@@ -36,7 +36,7 @@ class Parser implements ImporterInterface
 
     /**
      * @param int<1, max> $limit
-     * @return Iterator<int, ProductDTO>
+     * @return Iterator<int, ProductDTO|ProductImportExceptionInterface>
      */
     public function import(int $limit): Iterator
     {
