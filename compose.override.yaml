@@ -30,6 +30,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
 
 ###> symfony/mercure-bundle ###
 ###< symfony/mercure-bundle ###
